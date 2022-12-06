@@ -205,11 +205,19 @@ class Generic_UNet(SegmentationNetwork):
         """
         super(Generic_UNet, self).__init__()
 
+<<<<<<< HEAD
         # # 修改网络层数
         # num_pool=4
         # pool_op_kernel_sizes=pool_op_kernel_sizes[:num_pool]
         # print(num_pool,conv_kernel_sizes,pool_op_kernel_sizes)
         self.tcl_begin_level = 100
+=======
+        # 修改网络层数
+        num_pool=3
+        pool_op_kernel_sizes=pool_op_kernel_sizes[:num_pool]
+        # print(num_pool,conv_kernel_sizes,pool_op_kernel_sizes)
+        self.tcl_begin_level = 0
+>>>>>>> dedbbfac268d4dae351cc09e11aefd1a6e1fa809
         
         self.convolutional_upsampling = convolutional_upsampling
         self.convolutional_pooling = convolutional_pooling
@@ -396,6 +404,7 @@ class Generic_UNet(SegmentationNetwork):
                                     self.norm_op, self.norm_op_kwargs, self.dropout_op, self.dropout_op_kwargs,
                                     self.nonlin, self.nonlin_kwargs, basic_block=basic_block)                    
                 ))
+<<<<<<< HEAD
                 if u!=num_pool-1:
                     self.TCL.append(nn.Sequential(
                         conv_op(final_num_features, final_num_features,1, 1, 0, 1, 1),
@@ -404,6 +413,16 @@ class Generic_UNet(SegmentationNetwork):
                         norm_op(final_num_features, **self.norm_op_kwargs),
                         nonlin(**self.nonlin_kwargs),
                         ))            
+=======
+                self.TCL.append(nn.Sequential(
+                    conv_op(final_num_features, final_num_features,3, 1, 1, 1, 1),
+                    norm_op(final_num_features, **self.norm_op_kwargs),
+                    nonlin(**self.nonlin_kwargs),
+                    conv_op(final_num_features, final_num_features,1, 1, 0, 1, 1),
+                    norm_op(final_num_features, **self.norm_op_kwargs),
+                    nonlin(**self.nonlin_kwargs),
+                    ))            
+>>>>>>> dedbbfac268d4dae351cc09e11aefd1a6e1fa809
 
 
         # 这里是深监督学习需要的输出
@@ -456,7 +475,11 @@ class Generic_UNet(SegmentationNetwork):
         skips = []
         seg_outputs = []
         centerline_outputs = []
+<<<<<<< HEAD
         alpha = 0.2
+=======
+        alpha = 0.4
+>>>>>>> dedbbfac268d4dae351cc09e11aefd1a6e1fa809
         tcl_loss = 0
         # 每次两个block的卷积做完以后，进行降采样，降采样使用的最大池化
         # print('Encoder----------')
@@ -474,11 +497,17 @@ class Generic_UNet(SegmentationNetwork):
         # 每次先进行上采样，然后两个卷积block，这里的每层的seg结果都要使用一次final_nonlin层
         # trainerV2的final_nonlin层是lambda x: x,
         # print('Decoder')
+<<<<<<< HEAD
         if self.tcl_begin_level==-1:
             y=x
         for u in range(len(self.tu)):
             if self.centerline and u>self.tcl_begin_level:
                 # print('[CENTERLINE] :: the ',u,' level')
+=======
+        for u in range(len(self.tu)):
+            if self.centerline and u>self.tcl_begin_level:
+                # print('the ',u,' level')
+>>>>>>> dedbbfac268d4dae351cc09e11aefd1a6e1fa809
                 # print('the prior y shape:',y.size())
                 y = self.tu[u](y)
                 # print('fist y shape:',y.size(),skips[-(u+1)].size())
@@ -487,7 +516,11 @@ class Generic_UNet(SegmentationNetwork):
                 y = self.conv_blocks_localization_centerline[u-self.tcl_begin_level-1](y)
                 # print('output shape:',y.size())
 
+<<<<<<< HEAD
             # print('[SEGMENTATION] :: the ',u,' level')
+=======
+            # print('the ',u,' level')
+>>>>>>> dedbbfac268d4dae351cc09e11aefd1a6e1fa809
             # print('the prior x shape:',x.size())
             x = self.tu[u](x)
             # print('upsample x shape:',x.size(),'skip shape',skips[-(u + 1)].size())
@@ -496,8 +529,12 @@ class Generic_UNet(SegmentationNetwork):
             x = self.conv_blocks_localization[u](x)
             # print('output shape:',x.size())
             if self.centerline:
+<<<<<<< HEAD
                 if u>self.tcl_begin_level and u!=len(self.tu)-1:
                     # print('Here the TCL block')
+=======
+                if u>self.tcl_begin_level:
+>>>>>>> dedbbfac268d4dae351cc09e11aefd1a6e1fa809
                     public_information = self.TCL[u-self.tcl_begin_level-1](x+y)
                     tcl_loss += torch.norm(y-public_information,p=2)+torch.norm(x-public_information,p=2)
                     x = x*alpha+public_information*(1-alpha)

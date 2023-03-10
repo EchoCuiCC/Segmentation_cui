@@ -250,7 +250,7 @@ class GenericPreprocessor(object):
         # remove nans
         data[np.isnan(data)] = 0
 
-        np.save('nnUnet_before_resample',data)
+        # np.save('nnUnet_before_resample',data)
         data, seg = resample_patient(data, seg, np.array(original_spacing_transposed), target_spacing, 3, 1,
                                      force_separate_z=force_separate_z, order_z_data=0, order_z_seg=0,
                                      separate_z_anisotropy_threshold=self.resample_separate_z_anisotropy_threshold)
@@ -259,7 +259,7 @@ class GenericPreprocessor(object):
             'data.shape (data is resampled)': data.shape
         }
         print("before:", before, "\nafter: ", after, "\n")
-        np.save('nnUnet_after_resample',data)
+        # np.save('nnUnet_after_resample',data)
         if seg is not None:  # hippocampus 243 has one voxel with -2 as label. wtf?
             seg[seg < -1] = 0
 
@@ -287,7 +287,7 @@ class GenericPreprocessor(object):
                 data[c] = (data[c] - mean_intensity) / std_intensity
                 if use_nonzero_mask[c]:
                     data[c][seg[-1] < 0] = 0
-                np.save('nnUnet_before_normal',data)
+                # np.save('nnUnet_before_normal',data)
             elif scheme == "CT2":
                 # clip to lb and ub from train data foreground, use mn and sd form each case for normalization
                 assert self.intensityproperties is not None, "ERROR: if there is a CT then we need intensity properties"
@@ -318,7 +318,7 @@ class GenericPreprocessor(object):
 
         data, seg, properties = self.resample_and_normalize(data, target_spacing, properties, seg,
                                                             force_separate_z=force_separate_z)
-        np.save('preprocess_test_case',data.astype(np.float32))
+        # np.save('preprocess_test_case',data.astype(np.float32))
         return data.astype(np.float32), seg, properties
 
     def _run_internal(self, target_spacing, case_identifier, output_folder_stage, cropped_output_dir, force_separate_z,

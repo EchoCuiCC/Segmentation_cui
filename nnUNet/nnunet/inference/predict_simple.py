@@ -117,11 +117,8 @@ def main():
     parser.add_argument('-chk',
                         help='checkpoint name, default: model_final_checkpoint',
                         required=False,
-<<<<<<< HEAD
-                        default='model_best')
-=======
                         default='model_final_checkpoint')
->>>>>>> dedbbfac268d4dae351cc09e11aefd1a6e1fa809
+                        # 'model_best'
     parser.add_argument('--disable_mixed_precision', default=False, action='store_true', required=False,
                         help='Predictions are done with mixed precision by default. This improves speed and reduces '
                              'the required vram. If you want to disable mixed precision you can set this flag. Note '

@@ -45,20 +45,19 @@ class nnUNetTrainerV2(nnUNetTrainer):
     """
 # editing 增加了centerline
     def __init__(self, plans_file, fold, output_folder=None, dataset_directory=None, batch_dice=True, stage=None,
-                 unpack_data=True, deterministic=True, fp16=False,centerline = False,daw=False):
+                 unpack_data=True, deterministic=True, fp16=False,centerline = False,daw=False,ccp=False,tcl=False):
         super().__init__(plans_file, fold, output_folder, dataset_directory, batch_dice, stage, unpack_data,
                          deterministic, fp16)
-        print('调用了nnUNetTrainerV2！！！！！！！！！')
-        print('centerline = {}, daw = {}'.format(centerline,daw))
+        print('运行调用nnUNetTrainerV2')
         #额外添加的
-        self.centerline = centerline
+        self.centerline = True
         self.daw = daw
         self.change_patch_size = {
             'change_or_not':False,
             'size':[96,144,128]
         }
-        self.CCP=True
-        self.TCL=True
+        self.CCP=ccp
+        self.tcl=False
 
         self.max_num_epochs = 200
         self.initial_lr = 1e-2
@@ -143,9 +142,9 @@ class nnUNetTrainerV2(nnUNetTrainer):
 
                     # TAG:unpack_data参数指令将npz文件打开成npy文件存放
                     # 如果数据量过大，这里可以选择不unpack
-                    print("unpacking dataset")
+                    # print("unpacking dataset")
                     unpack_dataset(self.folder_with_preprocessed_data)
-                    print("done")
+                    # print("done")
                 else:
                     print(
                         "INFO: Not unpacking data! Training may be slow due to that. Pray you are not using 2d or you "
@@ -168,7 +167,7 @@ class nnUNetTrainerV2(nnUNetTrainer):
                                        also_print_to_console=False)
                 if self.CCP:
                     self.print_to_log_file('CCP is turning on')
-                if self.TCL:
+                if self.tcl:
                     self.print_to_log_file('TCL loss is turning on')                    
             else:
                 pass
@@ -344,9 +343,10 @@ class nnUNetTrainerV2(nnUNetTrainer):
                     else:
                         # 正常结果，不加惩罚项
                         l = 0.5*seg_l+0.5*centerline_l
-                        if self.TCL:
+                        if self.tcl:
                             l+=0.00001*tcl_loss
-                        print('[seg,centerline,tcl]  -1 loss:{:.3f}, -2 loss:{:.3f}, -3 loss:{:.3f}'.format(seg_dice.item(),centerline_dice.item(),tcl_loss.item()))
+                            print('[seg,centerline,tcl]  -1 loss:{:.3f}, -2 loss:{:.3f}, -3 loss:{:.3f}'.format(seg_dice.item(),centerline_dice.item(),tcl_loss.item()))
+                        print('[seg,centerline]  -1 loss:{:.3f}, -2 loss:{:.3f},'.format(seg_dice.item(),centerline_dice.item()))
                         if self.CCP:
                             # --CE的方式 
                             # 2021 12 2:做DC实验，DC UNET + CE的实验 记录training 数据的

@@ -42,7 +42,7 @@ from nnunet.utilities.to_torch import maybe_to_torch, to_cuda
 # TAG:所有trainner的父类
 class NetworkTrainer(object):
     def __init__(self, deterministic=True, fp16=False):
-        print('调用了networkTrainner!!!!!!!!!!!!!!!!!!!!')
+        print('运行调用NetworkTrainer')
         """
         A generic class that can train almost any neural network (RNNs excluded). It provides basic functionality such
         as the training loop, tracking of training and validation losses (and the target metric if you implement it)
@@ -316,8 +316,10 @@ class NetworkTrainer(object):
         if isfile(join(self.output_folder, "model_final_checkpoint.model")):
             return self.load_checkpoint(join(self.output_folder, "model_final_checkpoint.model"), train=train)
         if isfile(join(self.output_folder, "model_latest.model")):
+            print('load model_latest.model')
             return self.load_checkpoint(join(self.output_folder, "model_latest.model"), train=train)
         if isfile(join(self.output_folder, "model_best.model")):
+            print('load model_best.model')
             return self.load_best_checkpoint(train)
         raise RuntimeError("No checkpoint found")
 

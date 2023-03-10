@@ -89,7 +89,7 @@ def restore_model(pkl_file, checkpoint=None, train=False, fp16=None):
 
     # ToDo Fabian make saves use kwargs, please...
     # 直接改的centerline
-    # print(init,'centerline is turn on')
+    # print('[Notion] centerline is turn on')
     # trainer = tr(*(list(init)+[True]))
     
     trainer = tr(*init)

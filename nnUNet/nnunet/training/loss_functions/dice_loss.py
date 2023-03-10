@@ -191,6 +191,8 @@ class SoftDiceLoss(nn.Module):
             else:
                 dc = dc[:, 1:]
         dc = dc.mean()
+        if dc>1:
+            print("?? dc >1",dc)
         return -dc
 
 

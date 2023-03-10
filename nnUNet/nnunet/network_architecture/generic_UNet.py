@@ -22,7 +22,6 @@ import numpy as np
 from nnunet.network_architecture.initialization import InitWeights_He
 from nnunet.network_architecture.neural_network import SegmentationNetwork
 import torch.nn.functional
-from torch.nn.modules.conv import Conv3d
 
 
 class ConvDropoutNormNonlin(nn.Module):
@@ -183,7 +182,7 @@ class Generic_UNet(SegmentationNetwork):
 
     use_this_for_batch_size_computation_2D = 19739648
     use_this_for_batch_size_computation_3D = 520000000  # 505789440
-
+    
     def __init__(self, input_channels, base_num_features, num_classes, num_pool, num_conv_per_stage=2,
                  feat_map_mul_on_downscale=2, conv_op=nn.Conv2d,
                  norm_op=nn.BatchNorm2d, norm_op_kwargs=None,
@@ -204,21 +203,6 @@ class Generic_UNet(SegmentationNetwork):
         Questions? -> f.isensee@dkfz.de
         """
         super(Generic_UNet, self).__init__()
-
-<<<<<<< HEAD
-        # # 修改网络层数
-        # num_pool=4
-        # pool_op_kernel_sizes=pool_op_kernel_sizes[:num_pool]
-        # print(num_pool,conv_kernel_sizes,pool_op_kernel_sizes)
-        self.tcl_begin_level = 100
-=======
-        # 修改网络层数
-        num_pool=3
-        pool_op_kernel_sizes=pool_op_kernel_sizes[:num_pool]
-        # print(num_pool,conv_kernel_sizes,pool_op_kernel_sizes)
-        self.tcl_begin_level = 0
->>>>>>> dedbbfac268d4dae351cc09e11aefd1a6e1fa809
-        
         self.convolutional_upsampling = convolutional_upsampling
         self.convolutional_pooling = convolutional_pooling
         self.upscale_logits = upscale_logits
@@ -246,6 +230,7 @@ class Generic_UNet(SegmentationNetwork):
         self.final_nonlin = final_nonlin
         self._deep_supervision = deep_supervision
         self.do_ds = deep_supervision
+
         self.centerline = centerline
         
 
@@ -291,9 +276,7 @@ class Generic_UNet(SegmentationNetwork):
         self.td = []
         self.tu = []
         self.seg_outputs = []
-        self.centerline_outputs = []
-        self.conv_blocks_localization_centerline = []
-        self.TCL = []
+        self.centerline_outputs= [ ]
 
         output_features = base_num_features
         input_features = input_channels
@@ -393,50 +376,18 @@ class Generic_UNet(SegmentationNetwork):
                 StackedConvLayers(nfeatures_from_skip, final_num_features, 1, self.conv_op, self.conv_kwargs,
                                   self.norm_op, self.norm_op_kwargs, self.dropout_op, self.dropout_op_kwargs,
                                   self.nonlin, self.nonlin_kwargs, basic_block=basic_block)
-            ))
-            
-            if centerline and u>self.tcl_begin_level:
-                self.conv_blocks_localization_centerline.append(nn.Sequential(
-                    StackedConvLayers(n_features_after_tu_and_concat, nfeatures_from_skip, num_conv_per_stage - 1,
-                                    self.conv_op, self.conv_kwargs, self.norm_op, self.norm_op_kwargs, self.dropout_op,
-                                    self.dropout_op_kwargs, self.nonlin, self.nonlin_kwargs, basic_block=basic_block),
-                    StackedConvLayers(nfeatures_from_skip, final_num_features, 1, self.conv_op, self.conv_kwargs,
-                                    self.norm_op, self.norm_op_kwargs, self.dropout_op, self.dropout_op_kwargs,
-                                    self.nonlin, self.nonlin_kwargs, basic_block=basic_block)                    
-                ))
-<<<<<<< HEAD
-                if u!=num_pool-1:
-                    self.TCL.append(nn.Sequential(
-                        conv_op(final_num_features, final_num_features,1, 1, 0, 1, 1),
-                        conv_op(final_num_features, final_num_features,3, 1, 1, 1, 1),
-                        conv_op(final_num_features, final_num_features,3, 1, 1, 1, 1),
-                        norm_op(final_num_features, **self.norm_op_kwargs),
-                        nonlin(**self.nonlin_kwargs),
-                        ))            
-=======
-                self.TCL.append(nn.Sequential(
-                    conv_op(final_num_features, final_num_features,3, 1, 1, 1, 1),
-                    norm_op(final_num_features, **self.norm_op_kwargs),
-                    nonlin(**self.nonlin_kwargs),
-                    conv_op(final_num_features, final_num_features,1, 1, 0, 1, 1),
-                    norm_op(final_num_features, **self.norm_op_kwargs),
-                    nonlin(**self.nonlin_kwargs),
-                    ))            
->>>>>>> dedbbfac268d4dae351cc09e11aefd1a6e1fa809
-
+            ))   
 
         # 这里是深监督学习需要的输出
         for ds in range(len(self.conv_blocks_localization)):
-            # 原装写法
             self.seg_outputs.append(conv_op(self.conv_blocks_localization[ds][-1].output_channels, num_classes,
                                             1, 1, 0, 1, 1, seg_output_use_bias))
                                             # kernel_size, stride, padding, dilation, groups
                                             # 通常情况下group=1，也就是一共一组
+            if self.centerline:
+                self.centerline_outputs.append(conv_op(self.conv_blocks_localization[ds][-1].output_channels, num_classes,
+                                                1, 1, 0, 1, 1, seg_output_use_bias))          
 
-
-            if centerline:
-                self.centerline_outputs.append(conv_op(self.conv_blocks_localization[ds][-1].output_channels, 2,
-                                            1, 1, 0, 1, 1, seg_output_use_bias))
 
             
         self.upscale_logits_ops = []
@@ -459,10 +410,7 @@ class Generic_UNet(SegmentationNetwork):
         self.td = nn.ModuleList(self.td)
         self.tu = nn.ModuleList(self.tu)
         self.seg_outputs = nn.ModuleList(self.seg_outputs)
-        if centerline:
-            self.centerline_outputs = nn.ModuleList(self.centerline_outputs)
-            self.conv_blocks_localization_centerline = nn.ModuleList(self.conv_blocks_localization_centerline)
-            self.TCL = nn.ModuleList(self.TCL)
+        self.centerline_outputs = nn.ModuleList(self.centerline_outputs)
         if self.upscale_logits:
             self.upscale_logits_ops = nn.ModuleList(
                 self.upscale_logits_ops)  # lambda x:x is not a Module so we need to distinguish here
@@ -474,79 +422,24 @@ class Generic_UNet(SegmentationNetwork):
     def forward(self, x):
         skips = []
         seg_outputs = []
-        centerline_outputs = []
-<<<<<<< HEAD
-        alpha = 0.2
-=======
-        alpha = 0.4
->>>>>>> dedbbfac268d4dae351cc09e11aefd1a6e1fa809
-        tcl_loss = 0
-        # 每次两个block的卷积做完以后，进行降采样，降采样使用的最大池化
-        # print('Encoder----------')
+        centerline_outputs= []
+
         for d in range(len(self.conv_blocks_context) - 1):
-            # print('the',d,'level')
-            # print('input shape:',x.shape)
             x = self.conv_blocks_context[d](x)
-            # print('skip shape:',x.shape)
             skips.append(x)
             if not self.convolutional_pooling:
                 x = self.td[d](x)
 
         x = self.conv_blocks_context[-1](x)
-
-        # 每次先进行上采样，然后两个卷积block，这里的每层的seg结果都要使用一次final_nonlin层
-        # trainerV2的final_nonlin层是lambda x: x,
-        # print('Decoder')
-<<<<<<< HEAD
-        if self.tcl_begin_level==-1:
-            y=x
+        
         for u in range(len(self.tu)):
-            if self.centerline and u>self.tcl_begin_level:
-                # print('[CENTERLINE] :: the ',u,' level')
-=======
-        for u in range(len(self.tu)):
-            if self.centerline and u>self.tcl_begin_level:
-                # print('the ',u,' level')
->>>>>>> dedbbfac268d4dae351cc09e11aefd1a6e1fa809
-                # print('the prior y shape:',y.size())
-                y = self.tu[u](y)
-                # print('fist y shape:',y.size(),skips[-(u+1)].size())
-                y = torch.cat((y,skips[-(u+1)]),dim=1)
-                # print('concate shape:',y.size())
-                y = self.conv_blocks_localization_centerline[u-self.tcl_begin_level-1](y)
-                # print('output shape:',y.size())
-
-<<<<<<< HEAD
-            # print('[SEGMENTATION] :: the ',u,' level')
-=======
-            # print('the ',u,' level')
->>>>>>> dedbbfac268d4dae351cc09e11aefd1a6e1fa809
-            # print('the prior x shape:',x.size())
             x = self.tu[u](x)
-            # print('upsample x shape:',x.size(),'skip shape',skips[-(u + 1)].size())
             x = torch.cat((x, skips[-(u + 1)]), dim=1)
-            # print('concate shape:',x.size())
             x = self.conv_blocks_localization[u](x)
-            # print('output shape:',x.size())
-            if self.centerline:
-<<<<<<< HEAD
-                if u>self.tcl_begin_level and u!=len(self.tu)-1:
-                    # print('Here the TCL block')
-=======
-                if u>self.tcl_begin_level:
->>>>>>> dedbbfac268d4dae351cc09e11aefd1a6e1fa809
-                    public_information = self.TCL[u-self.tcl_begin_level-1](x+y)
-                    tcl_loss += torch.norm(y-public_information,p=2)+torch.norm(x-public_information,p=2)
-                    x = x*alpha+public_information*(1-alpha)
-                    y = y*alpha+public_information*(1-alpha)
-                else:
-                    y = x
-
-            # ---------原本的写法----------
             seg_outputs.append(self.final_nonlin(self.seg_outputs[u](x)))
             if self.centerline:
-                centerline_outputs.append(self.final_nonlin(self.centerline_outputs[u](y)))
-            # ---------原本的写法----------
+                centerline_outputs.append(self.final_nonlin(self.centerline_outputs[u](x)))
+
 
         # net:输出网络
         # [::-1]就是倒置数组
@@ -556,11 +449,11 @@ class Generic_UNet(SegmentationNetwork):
         # 如果不需要deep supervision的话直接输出最后一个seg结果,也就是网络最后一层结果就可以了
         # deep supervision的话，最会输出五个结果，ncdwh->5 1 d w h,第一个是输出结果，后续的是其它的结果
         # 这里如果upscale_logits=True的话,将会把这些结果上采样,一般设置为false,所以不会上采样
-        if self._deep_supervision and self.do_ds:
+        if self._deep_supervision and self.do_ds:          
             if self.centerline:
                 seg = tuple([seg_outputs[-1]] + [i(j) for i, j in zip(list(self.upscale_logits_ops)[::-1], seg_outputs[:-1][::-1])])
                 centerline = tuple([centerline_outputs[-1]]+[i(j) for i, j in zip(list(self.upscale_logits_ops)[::-1], centerline_outputs[:-1][::-1])])
-                return seg,centerline,tcl_loss                         
+                return seg,centerline  
             return tuple([seg_outputs[-1]] + [i(j) for i, j in
                                               zip(list(self.upscale_logits_ops)[::-1], seg_outputs[:-1][::-1])])
         else:

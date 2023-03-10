@@ -142,7 +142,6 @@ def main():
     # 获取计划文件，输出文件地址，数据位置，是否采用batch_dice(只要不是3d_lower和2d都会用)，plan stage，trainner对象 
     plans_file, output_folder_name, dataset_directory, batch_dice, stage, \
     trainer_class = get_default_configuration(network, task, network_trainer, plans_identifier)
-
     if trainer_class is None:
         raise RuntimeError("Could not find trainer class in nnunet.training.network_training")
 
